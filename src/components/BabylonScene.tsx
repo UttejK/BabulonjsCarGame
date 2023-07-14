@@ -29,6 +29,7 @@ const Canvas: React.FC<CanvasProps> = ({ canvasRef }) => {
 
 const BabylonScene: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const [screenSize, setScreenSize] = useState<{
     width: number;
     height: number;
@@ -57,8 +58,10 @@ const BabylonScene: React.FC = () => {
       const engine = new Engine(canvasRef.current, true);
       const scene = new Scene(engine);
       // Create a physics engine
+
+      let gravityX = 0;
       const physicsPlugin = new CannonJSPlugin(true, 10, CANNON);
-      scene.enablePhysics(new Vector3(0, -9.81, 0), physicsPlugin);
+      scene.enablePhysics(new Vector3(gravityX, -9.81, 0), physicsPlugin);
 
       // Set the background color to white
       scene.clearColor = new Color4(0.1, 0.1, 0.1, 1);
@@ -66,24 +69,13 @@ const BabylonScene: React.FC = () => {
       // Create a hemispheric light to illuminate the scene
       const light = new HemisphericLight(
         "light",
-        new Vector3(0, 1000, 0),
+        new Vector3(0, 100, 0),
         scene
       );
-
-      // Create a camera
-      const camera = new ArcRotateCamera(
-        "camera",
-        0,
-        0,
-        10,
-        Vector3.Zero(),
-        scene
-      );
-      camera.position = new Vector3(0, 5, 5);
-      camera.attachControl(canvasRef.current, true);
+      light.intensity = 0.9;
 
       //Create a ground Plane
-      const plane = MeshBuilder.CreatePlane("plane", { size: 10 }, scene);
+      const plane = MeshBuilder.CreatePlane("plane", { size: 50 }, scene);
       plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);
       plane.physicsImpostor = new PhysicsImpostor(
         plane,
@@ -93,6 +85,9 @@ const BabylonScene: React.FC = () => {
       );
 
       // Import the car mesh
+
+      let car: AbstractMesh | null = null;
+
       const importCar = async () => {
         const result = await SceneLoader.ImportMeshAsync(
           "",
@@ -102,11 +97,11 @@ const BabylonScene: React.FC = () => {
           undefined,
           ".glb"
         );
-        const car = result.meshes[0];
+        car = result.meshes[0]; // Values from 6 are for the tyres
         // Create a compound impostor for the car
         const compoundImpostor = new PhysicsImpostor(
           car,
-          PhysicsImpostor.ConvexHullImpostor,
+          PhysicsImpostor.BoxImpostor,
           {
             mass: 1,
             friction: 1,
@@ -116,6 +111,44 @@ const BabylonScene: React.FC = () => {
       };
 
       importCar();
+
+      // Handle keyboard inputs for car control
+      const keysPressed: { [key: string]: boolean } = {};
+      scene.onKeyboardObservable.add((kbInfo) => {
+        if (car) {
+          const key = kbInfo.event.key;
+          const isKeyDown = kbInfo.type === 1;
+          keysPressed[key] = isKeyDown;
+
+          // Car movement controls
+          const speed = 1;
+          const rotationSpeed = 0.2;
+
+          if (keysPressed["w"] || keysPressed["ArrowUp"]) {
+            car.moveWithCollisions(car.right.scale(-speed));
+          }
+          if (keysPressed["s"] || keysPressed["ArrowDown"]) {
+            car.moveWithCollisions(car.right.scale(speed));
+          }
+          if (keysPressed["a"] || keysPressed["ArrowLeft"]) {
+            car.rotate(Vector3.Up(), -rotationSpeed);
+          }
+          if (keysPressed["d"] || keysPressed["ArrowRight"]) {
+            car.rotate(Vector3.Up(), rotationSpeed);
+          }
+        }
+      });
+      // Create a camera
+      const camera = new ArcRotateCamera(
+        "camera",
+        0,
+        0,
+        10,
+        Vector3.Zero(),
+        scene
+      );
+      camera.position = new Vector3(0, 10, 10);
+      camera.attachControl(canvasRef.current, true);
 
       engine.runRenderLoop(() => {
         scene.render();
