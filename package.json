@@ -20,6 +20,7 @@
     "@babylonjs/loaders": "^6.12.1",
     "autoprefixer": "^10.4.14",
     "babylonjs": "^6.12.1",
+    "cannon": "^0.6.2",
     "gatsby": "^5.11.0",
     "gatsby-plugin-postcss": "^6.11.0",
     "postcss": "^8.4.26",
@@ -29,6 +30,7 @@
     "tailwindcss": "^3.3.3"
   },
   "devDependencies": {
+    "@types/cannon": "^0.1.8",
     "@types/node": "^20.3.3",
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.6",
