@@ -81,16 +81,16 @@ const BabylonScene: React.FC = () => {
 
       // Import the car mesh
       let car: AbstractMesh | null = null;
+      let tireL1: AbstractMesh | null = null;
+      let tireL2: AbstractMesh | null = null;
+      let tireR1: AbstractMesh | null = null;
+      let tireR2: AbstractMesh | null = null;
+      let tireL3: AbstractMesh | null = null;
+      let tireL4: AbstractMesh | null = null;
+      let tireR3: AbstractMesh | null = null;
+      let tireR4: AbstractMesh | null = null;
 
       const importCar = async () => {
-        // const result = await SceneLoader.ImportMeshAsync(
-        //   "",
-        //   "/",
-        //   "Car.glb",
-        //   scene,
-        //   undefined,
-        //   ".glb"
-        // );
         const result = await SceneLoader.ImportMeshAsync(
           "",
           "https://raw.githubusercontent.com/UttejK/BabulonjsCarGame/main/public/",
@@ -100,6 +100,14 @@ const BabylonScene: React.FC = () => {
           ".glb"
         );
         car = result.meshes[0]; // Values from 6 are for the tyres
+        tireL1 = result.meshes[6];
+        tireL2 = result.meshes[7];
+        tireR1 = result.meshes[8];
+        tireR2 = result.meshes[9];
+        tireL3 = result.meshes[6];
+        tireL4 = result.meshes[7];
+        tireR3 = result.meshes[8];
+        tireR4 = result.meshes[9];
       };
 
       importCar();
@@ -159,6 +167,29 @@ const BabylonScene: React.FC = () => {
             speed = Math.min(speed + acceleration, 0);
             car?.moveWithCollisions(car.right.scaleInPlace(-speed));
           }
+        }
+
+        // Rotate the tires when the car is moving
+        if (speed !== 0) {
+          const tireRotationSpeed = 0.1; // Rotation speed of tires
+          tireL1?.rotate(Vector3.Up(), tireRotationSpeed);
+          tireL2?.rotate(Vector3.Up(), tireRotationSpeed);
+          tireR1?.rotate(Vector3.Up(), tireRotationSpeed);
+          tireR2?.rotate(Vector3.Up(), tireRotationSpeed);
+          tireL3?.rotate(Vector3.Up(), tireRotationSpeed);
+          tireL4?.rotate(Vector3.Up(), tireRotationSpeed);
+          tireR3?.rotate(Vector3.Up(), tireRotationSpeed);
+          tireR4?.rotate(Vector3.Up(), tireRotationSpeed);
+        } else {
+          // Reset tire rotation when the car is not moving
+          tireL1?.rotation.set(0, 0, 0);
+          tireL2?.rotation.set(0, 0, 0);
+          tireR1?.rotation.set(0, 0, 0);
+          tireR2?.rotation.set(0, 0, 0);
+          tireL3?.rotation.set(0, 0, 0);
+          tireL4?.rotation.set(0, 0, 0);
+          tireR3?.rotation.set(0, 0, 0);
+          tireR4?.rotation.set(0, 0, 0);
         }
       });
 
