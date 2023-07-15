@@ -9,10 +9,9 @@ import {
   SceneLoader,
   MeshBuilder,
   CannonJSPlugin,
-  PhysicsImpostorParameters,
-  PhysicsImpostor,
-  PhysicsEngine,
   AbstractMesh,
+  ActionManager,
+  ExecuteCodeAction,
 } from "@babylonjs/core";
 // import * as BABYLON from "babylonjs";
 import "@babylonjs/loaders";
@@ -57,11 +56,6 @@ const BabylonScene: React.FC = () => {
     if (canvasRef.current) {
       const engine = new Engine(canvasRef.current, true);
       const scene = new Scene(engine);
-      // Create a physics engine
-
-      let gravityX = 0;
-      const physicsPlugin = new CannonJSPlugin(true, 10, CANNON);
-      scene.enablePhysics(new Vector3(gravityX, -9.81, 0), physicsPlugin);
 
       // Set the background color to white
       scene.clearColor = new Color4(0.1, 0.1, 0.1, 1);
@@ -77,12 +71,6 @@ const BabylonScene: React.FC = () => {
       //Create a ground Plane
       const plane = MeshBuilder.CreatePlane("plane", { size: 50 }, scene);
       plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);
-      plane.physicsImpostor = new PhysicsImpostor(
-        plane,
-        PhysicsImpostor.BoxImpostor,
-        { mass: 0, friction: 0.5, restitution: 0.7 },
-        scene
-      );
 
       // Import the car mesh
 
@@ -98,44 +86,45 @@ const BabylonScene: React.FC = () => {
           ".glb"
         );
         car = result.meshes[0]; // Values from 6 are for the tyres
-        // Create a compound impostor for the car
-        const compoundImpostor = new PhysicsImpostor(
-          car,
-          PhysicsImpostor.BoxImpostor,
-          {
-            mass: 1,
-            friction: 1,
-          },
-          scene
-        );
       };
 
       importCar();
 
       // Handle keyboard inputs for car control
-      const keysPressed: { [key: string]: boolean } = {};
-      scene.onKeyboardObservable.add((kbInfo) => {
-        if (car) {
-          const key = kbInfo.event.key;
-          const isKeyDown = kbInfo.type === 1;
-          keysPressed[key] = isKeyDown;
+      let inputMap: { [key: string]: boolean } = {};
+      scene.actionManager = new ActionManager(scene);
+      scene.actionManager.registerAction(
+        new ExecuteCodeAction(ActionManager.OnKeyDownTrigger, (evt) => {
+          inputMap[evt.sourceEvent.key] = evt.sourceEvent.type === "keydown";
+        })
+      );
+      scene.actionManager.registerAction(
+        new ExecuteCodeAction(ActionManager.OnKeyUpTrigger, (evt) => {
+          inputMap[evt.sourceEvent.key] = evt.sourceEvent.type === "keydown";
+        })
+      );
 
-          // Car movement controls
-          const speed = 1;
-          const rotationSpeed = 0.2;
-
-          if (keysPressed["w"] || keysPressed["ArrowUp"]) {
-            car.moveWithCollisions(car.right.scale(-speed));
-          }
-          if (keysPressed["s"] || keysPressed["ArrowDown"]) {
-            car.moveWithCollisions(car.right.scale(speed));
-          }
-          if (keysPressed["a"] || keysPressed["ArrowLeft"]) {
-            car.rotate(Vector3.Up(), -rotationSpeed);
-          }
-          if (keysPressed["d"] || keysPressed["ArrowRight"]) {
-            car.rotate(Vector3.Up(), rotationSpeed);
-          }
+      scene.onBeforeRenderObservable.add(() => {
+        let keydown = false;
+        const speed = 0.5;
+        const RotationSpeed = 0.05;
+        if (inputMap["w"]) {
+          const forward = car?.getDirection(Vector3.Forward());
+          car?.moveWithCollisions(car?.right.scaleInPlace(-speed));
+          keydown = true;
+        }
+        if (inputMap["s"]) {
+          const backward = car?.getDirection(Vector3.Forward()).scale(-1);
+          car?.moveWithCollisions(car?.right.scaleInPlace(speed));
+          keydown = true;
+        }
+        if (inputMap["a"]) {
+          car?.rotate(Vector3.Up(), -RotationSpeed);
+          keydown = true;
+        }
+        if (inputMap["d"]) {
+          car?.rotate(Vector3.Up(), RotationSpeed);
+          keydown = true;
         }
       });
       // Create a camera
