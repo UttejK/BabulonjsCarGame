@@ -116,7 +116,7 @@ const BabylonScene: React.FC = () => {
       const importCity = async () => {
         const result = await SceneLoader.ImportMeshAsync(
           "",
-          "/",
+          "https://raw.githubusercontent.com/UttejK/BabulonjsCarGame/main/public/",
           "city.glb",
           scene,
           undefined,
