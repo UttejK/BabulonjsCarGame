@@ -6,6 +6,8 @@ import {
   Color4,
   Vector3,
   ArcRotateCamera,
+  FollowCamera,
+  FollowCameraInputsManager,
   SceneLoader,
   MeshBuilder,
   AbstractMesh,
@@ -13,10 +15,8 @@ import {
   ExecuteCodeAction,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
-
-import {} from "@babylonjs/loaders/glTF";
-
-// import carMesh from "./Car.glb";
+import { getData } from "../../.cache/page-ssr/index";
+import { FollowBehavior } from "react-babylonjs";
 
 interface CanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -108,37 +108,55 @@ const BabylonScene: React.FC = () => {
         let keydown = false;
         const speed = 0.5;
         const rotationSpeed = 0.05;
-        if (inputMap["w"]) {
-          const forward = car?.getDirection(Vector3.Forward());
+        if (inputMap["w"] || inputMap["ArrowUp"]) {
           car?.moveWithCollisions(car?.right.scaleInPlace(-speed));
           keydown = true;
         }
-        if (inputMap["s"]) {
-          const backward = car?.getDirection(Vector3.Forward()).scale(-1);
+        if (inputMap["s"] || inputMap["ArrowDown"]) {
           car?.moveWithCollisions(car?.right.scaleInPlace(speed));
           keydown = true;
         }
-        if (inputMap["a"]) {
+        if (inputMap["a"] || inputMap["ArrowLeft"]) {
           car?.rotate(Vector3.Up(), -rotationSpeed);
           keydown = true;
         }
-        if (inputMap["d"]) {
+        if (inputMap["d"] || inputMap["ArrowRight"]) {
           car?.rotate(Vector3.Up(), rotationSpeed);
           keydown = true;
         }
       });
 
       // Create a camera
-      const camera = new ArcRotateCamera(
-        "camera",
-        0,
-        0,
-        10,
-        Vector3.Zero(),
+      // const camera = new ArcRotateCamera(
+      //   "camera",
+      //   0,
+      //   0,
+      //   10,
+      //   Vector3.Zero(),
+      //   scene
+      // );
+      const camera = new FollowCamera(
+        "FollowCam",
+        new Vector3(0, 10, -30),
         scene
       );
-      camera.position = new Vector3(0, 10, 10);
-      camera.attachControl(canvasRef.current, true);
+
+      camera.radius = 30;
+
+      camera.heightOffset = 10;
+
+      camera.rotationOffset = 0;
+
+      camera.cameraAcceleration = 0.005;
+
+      camera.maxCameraSpeed = 10;
+
+      // camera.attachControl(canvasRef, true);
+      camera.attachControl();
+
+      camera.lockedTarget = car; //version 2.5 onwards
+      // camera.position = new Vector3(0, 5, 10);
+      // camera.attachControl(scene);
 
       engine.runRenderLoop(() => {
         scene.render();
