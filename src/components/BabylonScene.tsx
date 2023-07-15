@@ -7,6 +7,7 @@ import {
   Color4,
   Vector3,
   ArcRotateCamera,
+  UniversalCamera,
   SceneLoader,
   MeshBuilder,
   AbstractMesh,
@@ -15,8 +16,6 @@ import {
   StandardMaterial,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
-import { getData } from "../../.cache/page-ssr/index";
-import { FollowBehavior } from "react-babylonjs";
 
 interface CanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -68,16 +67,16 @@ const BabylonScene: React.FC = () => {
       );
       light.intensity = 0.9;
 
-      // Create a ground Plane
-      const plane = MeshBuilder.CreatePlane(
-        "plane",
-        { height: 100, width: 100 },
-        scene
-      );
-      plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);
-      const groundMat = new StandardMaterial("ground", scene);
-      groundMat.diffuseColor = new Color3(0.3, 0.3, 0.3);
-      plane.material = groundMat;
+      // // Create a ground Plane
+      // const plane = MeshBuilder.CreatePlane(
+      //   "plane",
+      //   { height: 100, width: 100 },
+      //   scene
+      // );
+      // plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);
+      // const groundMat = new StandardMaterial("ground", scene);
+      // groundMat.diffuseColor = new Color3(0.3, 0.3, 0.3);
+      // plane.material = groundMat;
 
       // Import the car mesh
       let car: AbstractMesh | null = null;
@@ -111,6 +110,27 @@ const BabylonScene: React.FC = () => {
       };
 
       importCar();
+
+      // Import the city
+      let city: AbstractMesh | null = null;
+      const importCity = async () => {
+        const result = await SceneLoader.ImportMeshAsync(
+          "",
+          "/",
+          "city.glb",
+          scene,
+          undefined,
+          ".glb"
+        );
+        city = result.meshes[0];
+        city.scaling = new Vector3(5, 5, 5);
+
+        if (car?.position) {
+          camera.position = car?.position;
+        }
+      };
+
+      importCity();
 
       // Handle keyboard inputs for car control
       let inputMap: { [key: string]: boolean } = {};
