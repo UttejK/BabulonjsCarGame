@@ -8,15 +8,15 @@ import {
   ArcRotateCamera,
   SceneLoader,
   MeshBuilder,
-  CannonJSPlugin,
   AbstractMesh,
   ActionManager,
   ExecuteCodeAction,
 } from "@babylonjs/core";
-// import * as BABYLON from "babylonjs";
 import "@babylonjs/loaders";
-// Import cannon js
-import * as CANNON from "cannon";
+
+import {} from "@babylonjs/loaders/glTF";
+
+// import carMesh from "./Car.glb";
 
 interface CanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -68,12 +68,12 @@ const BabylonScene: React.FC = () => {
       );
       light.intensity = 0.9;
 
-      //Create a ground Plane
+      // Create a ground Plane
       const plane = MeshBuilder.CreatePlane("plane", { size: 50 }, scene);
       plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);
 
       // Import the car mesh
-
+      // let car: AbstractMesh | null = null;
       let car: AbstractMesh | null = null;
 
       const importCar = async () => {
@@ -107,7 +107,7 @@ const BabylonScene: React.FC = () => {
       scene.onBeforeRenderObservable.add(() => {
         let keydown = false;
         const speed = 0.5;
-        const RotationSpeed = 0.05;
+        const rotationSpeed = 0.05;
         if (inputMap["w"]) {
           const forward = car?.getDirection(Vector3.Forward());
           car?.moveWithCollisions(car?.right.scaleInPlace(-speed));
@@ -119,14 +119,15 @@ const BabylonScene: React.FC = () => {
           keydown = true;
         }
         if (inputMap["a"]) {
-          car?.rotate(Vector3.Up(), -RotationSpeed);
+          car?.rotate(Vector3.Up(), -rotationSpeed);
           keydown = true;
         }
         if (inputMap["d"]) {
-          car?.rotate(Vector3.Up(), RotationSpeed);
+          car?.rotate(Vector3.Up(), rotationSpeed);
           keydown = true;
         }
       });
+
       // Create a camera
       const camera = new ArcRotateCamera(
         "camera",
