@@ -7,8 +7,6 @@ import {
   Color4,
   Vector3,
   ArcRotateCamera,
-  FollowCamera,
-  FollowCameraInputsManager,
   SceneLoader,
   MeshBuilder,
   AbstractMesh,
@@ -85,9 +83,17 @@ const BabylonScene: React.FC = () => {
       let car: AbstractMesh | null = null;
 
       const importCar = async () => {
+        // const result = await SceneLoader.ImportMeshAsync(
+        //   "",
+        //   "/",
+        //   "Car.glb",
+        //   scene,
+        //   undefined,
+        //   ".glb"
+        // );
         const result = await SceneLoader.ImportMeshAsync(
           "",
-          "/",
+          "https://raw.githubusercontent.com/UttejK/BabulonjsCarGame/main/public/",
           "Car.glb",
           scene,
           undefined,
