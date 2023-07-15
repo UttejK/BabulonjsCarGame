@@ -71,19 +71,18 @@ const BabylonScene: React.FC = () => {
       light.intensity = 0.9;
 
       // Create a ground Plane
-      const plane = MeshBuilder.CreatePlane("plane", { size: 50 }, scene);
+      const plane = MeshBuilder.CreatePlane(
+        "plane",
+        { height: 100, width: 100 },
+        scene
+      );
       plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);
       const groundMat = new StandardMaterial("ground", scene);
       groundMat.diffuseColor = new Color3(0.3, 0.3, 0.3);
       plane.material = groundMat;
 
       // Import the car mesh
-      // let car: AbstractMesh | null = null;
       let car: AbstractMesh | null = null;
-      let tyreL1: AbstractMesh | null = null;
-      let tyreL2: AbstractMesh | null = null;
-      let tyreR1: AbstractMesh | null = null;
-      let tyreR2: AbstractMesh | null = null;
 
       const importCar = async () => {
         const result = await SceneLoader.ImportMeshAsync(
@@ -95,7 +94,6 @@ const BabylonScene: React.FC = () => {
           ".glb"
         );
         car = result.meshes[0]; // Values from 6 are for the tyres
-        tyreL1 = result.meshes[6];
       };
 
       importCar();
@@ -114,60 +112,49 @@ const BabylonScene: React.FC = () => {
         })
       );
 
+      let speed = 0; // Car's current speed
+      const acceleration = 0.005; // Acceleration rate
+      const maxSpeed = 0.5; // Maximum speed
+
       scene.onBeforeRenderObservable.add(() => {
-        let animating = false;
         let keydown = false;
-        const fspeed = 0.2;
-        const rotationSpeed = 0.05;
-        let rot = Math.PI / 2;
+
         if (inputMap["w"]) {
-          car?.moveWithCollisions(car?.right.scaleInPlace(-fspeed));
+          speed = Math.min(speed + acceleration, maxSpeed);
+          car?.moveWithCollisions(car.right.scaleInPlace(-speed));
           keydown = true;
         }
         if (inputMap["s"]) {
-          car?.moveWithCollisions(car?.right.scaleInPlace(fspeed));
+          speed = Math.max(speed - acceleration, -maxSpeed);
+          car?.moveWithCollisions(car.right.scaleInPlace(-speed));
           keydown = true;
         }
-        if (inputMap["a"]) {
-          if (inputMap["s"]) {
-            car?.rotate(Vector3.Up(), rotationSpeed);
-            keydown = true;
-          } else {
-            car?.rotate(Vector3.Up(), -rotationSpeed);
-            keydown = true;
-          }
+        if (
+          (inputMap["a"] && inputMap["w"]) ||
+          (inputMap["d"] && inputMap["s"])
+        ) {
+          car?.rotate(Vector3.Up(), -0.05);
+          keydown = true;
         }
-        if (inputMap["d"]) {
-          if (inputMap["s"]) {
-            car?.rotate(Vector3.Up(), -rotationSpeed);
-            keydown = true;
-          } else {
-            car?.rotate(Vector3.Up(), rotationSpeed);
-            keydown = true;
-          }
-          // tyreL1?.rotate(new Vector3(0, 0, 1), Math.PI / 3);
+        if (
+          (inputMap["d"] && inputMap["w"]) ||
+          (inputMap["a"] && inputMap["s"])
+        ) {
+          car?.rotate(Vector3.Up(), 0.05);
+          keydown = true;
         }
 
-        if (keydown) {
-          if (!animating) {
-            animating = true;
-            if (inputMap["q"]) {
-              tyreL1?.rotate(Vector3.Up(), rot);
-              tyreL2?.rotate(Vector3.Up(), rot);
-              tyreR1?.rotate(Vector3.Up(), rot);
-              tyreR2?.rotate(Vector3.Up(), rot);
-              rot += 10;
-            }
+        if (!keydown) {
+          // If no input, gradually slow down the car
+          if (speed > 0) {
+            speed = Math.max(speed - acceleration, 0);
+            car?.moveWithCollisions(car.right.scaleInPlace(-speed));
+          } else if (speed < 0) {
+            speed = Math.min(speed + acceleration, 0);
+            car?.moveWithCollisions(car.right.scaleInPlace(-speed));
           }
-        } else if (animating) {
-          animating = false;
         }
       });
-      // The following can be used to control the camera using arrow keys
-      // if (inputMap["w"] || inputMap["ArrowUp"]) {
-      //   if (inputMap["s"] || inputMap["ArrowDown"]) {
-      //   if (inputMap["a"] || inputMap["ArrowLeft"]) {
-      //   if (inputMap["d"] || inputMap["ArrowRight"]) {
 
       // Create a camera
       const camera = new ArcRotateCamera(
@@ -178,9 +165,8 @@ const BabylonScene: React.FC = () => {
         Vector3.Zero(),
         scene
       );
-
       camera.position = new Vector3(0, 5, 10);
-      camera.attachControl(scene);
+      camera.attachControl(canvasRef.current, true);
 
       engine.runRenderLoop(() => {
         scene.render();
