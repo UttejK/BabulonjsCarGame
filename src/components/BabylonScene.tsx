@@ -3,6 +3,7 @@ import {
   Engine,
   Scene,
   HemisphericLight,
+  Color3,
   Color4,
   Vector3,
   ArcRotateCamera,
@@ -13,6 +14,7 @@ import {
   AbstractMesh,
   ActionManager,
   ExecuteCodeAction,
+  StandardMaterial,
 } from "@babylonjs/core";
 import "@babylonjs/loaders";
 import { getData } from "../../.cache/page-ssr/index";
@@ -71,10 +73,17 @@ const BabylonScene: React.FC = () => {
       // Create a ground Plane
       const plane = MeshBuilder.CreatePlane("plane", { size: 50 }, scene);
       plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);
+      const groundMat = new StandardMaterial("ground", scene);
+      groundMat.diffuseColor = new Color3(0.3, 0.3, 0.3);
+      plane.material = groundMat;
 
       // Import the car mesh
       // let car: AbstractMesh | null = null;
       let car: AbstractMesh | null = null;
+      let tyreL1: AbstractMesh | null = null;
+      let tyreL2: AbstractMesh | null = null;
+      let tyreR1: AbstractMesh | null = null;
+      let tyreR2: AbstractMesh | null = null;
 
       const importCar = async () => {
         const result = await SceneLoader.ImportMeshAsync(
@@ -86,6 +95,7 @@ const BabylonScene: React.FC = () => {
           ".glb"
         );
         car = result.meshes[0]; // Values from 6 are for the tyres
+        tyreL1 = result.meshes[6];
       };
 
       importCar();
@@ -105,58 +115,72 @@ const BabylonScene: React.FC = () => {
       );
 
       scene.onBeforeRenderObservable.add(() => {
+        let animating = false;
         let keydown = false;
-        const speed = 0.5;
+        const fspeed = 0.2;
         const rotationSpeed = 0.05;
-        if (inputMap["w"] || inputMap["ArrowUp"]) {
-          car?.moveWithCollisions(car?.right.scaleInPlace(-speed));
+        let rot = Math.PI / 2;
+        if (inputMap["w"]) {
+          car?.moveWithCollisions(car?.right.scaleInPlace(-fspeed));
           keydown = true;
         }
-        if (inputMap["s"] || inputMap["ArrowDown"]) {
-          car?.moveWithCollisions(car?.right.scaleInPlace(speed));
+        if (inputMap["s"]) {
+          car?.moveWithCollisions(car?.right.scaleInPlace(fspeed));
           keydown = true;
         }
-        if (inputMap["a"] || inputMap["ArrowLeft"]) {
-          car?.rotate(Vector3.Up(), -rotationSpeed);
-          keydown = true;
+        if (inputMap["a"]) {
+          if (inputMap["s"]) {
+            car?.rotate(Vector3.Up(), rotationSpeed);
+            keydown = true;
+          } else {
+            car?.rotate(Vector3.Up(), -rotationSpeed);
+            keydown = true;
+          }
         }
-        if (inputMap["d"] || inputMap["ArrowRight"]) {
-          car?.rotate(Vector3.Up(), rotationSpeed);
-          keydown = true;
+        if (inputMap["d"]) {
+          if (inputMap["s"]) {
+            car?.rotate(Vector3.Up(), -rotationSpeed);
+            keydown = true;
+          } else {
+            car?.rotate(Vector3.Up(), rotationSpeed);
+            keydown = true;
+          }
+          // tyreL1?.rotate(new Vector3(0, 0, 1), Math.PI / 3);
+        }
+
+        if (keydown) {
+          if (!animating) {
+            animating = true;
+            if (inputMap["q"]) {
+              tyreL1?.rotate(Vector3.Up(), rot);
+              tyreL2?.rotate(Vector3.Up(), rot);
+              tyreR1?.rotate(Vector3.Up(), rot);
+              tyreR2?.rotate(Vector3.Up(), rot);
+              rot += 10;
+            }
+          }
+        } else if (animating) {
+          animating = false;
         }
       });
+      // The following can be used to control the camera using arrow keys
+      // if (inputMap["w"] || inputMap["ArrowUp"]) {
+      //   if (inputMap["s"] || inputMap["ArrowDown"]) {
+      //   if (inputMap["a"] || inputMap["ArrowLeft"]) {
+      //   if (inputMap["d"] || inputMap["ArrowRight"]) {
 
       // Create a camera
-      // const camera = new ArcRotateCamera(
-      //   "camera",
-      //   0,
-      //   0,
-      //   10,
-      //   Vector3.Zero(),
-      //   scene
-      // );
-      const camera = new FollowCamera(
-        "FollowCam",
-        new Vector3(0, 10, -30),
+      const camera = new ArcRotateCamera(
+        "camera",
+        0,
+        0,
+        10,
+        Vector3.Zero(),
         scene
       );
 
-      camera.radius = 30;
-
-      camera.heightOffset = 10;
-
-      camera.rotationOffset = 0;
-
-      camera.cameraAcceleration = 0.005;
-
-      camera.maxCameraSpeed = 10;
-
-      // camera.attachControl(canvasRef, true);
-      camera.attachControl();
-
-      camera.lockedTarget = car; //version 2.5 onwards
-      // camera.position = new Vector3(0, 5, 10);
-      // camera.attachControl(scene);
+      camera.position = new Vector3(0, 5, 10);
+      camera.attachControl(scene);
 
       engine.runRenderLoop(() => {
         scene.render();
